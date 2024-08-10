@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김치와 깍두기 게임</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        #game-container, #kimchi-game {
+            display: none;
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        input {
+            padding: 10px;
+            font-size: 18px;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            align-items: center;
+            padding: 10px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 50%;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(to right, #f34c4c, #b92f2f);
+            color: white;
+            transition: background 0.3s ease;
+        }
+        button:disabled {
+            background: grey;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        #history {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-entry {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        #help-button, #switch-button {
+            position: absolute;
+            top: px; /* Adjust to move buttons from the top */
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Increased padding */
+            font-size: 16px;    /* Increased font size */
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 2;
+        }
+        #help-button {
+            top: 650px;
+            left: 50%; /* Center the button horizontally */
+            background-color: #28a745;
+        }
+        #switch-button {
+            left: 50%; /* Center the button horizontally */
+            top: 600px; /* Positioned below the help button */
+            background-color: #007bff;
+        }
+        #help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        #modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: left;
+            position: relative;
+        }
+        #close-button {
+            background-color: #82343c;
+            border: none;
+            color: white;
+            padding: 8px; /* Increased padding */
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+        }
+        #kimchi-game {
+            display: none;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        #player, #kimchi {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+        }
+        #player {
+            background-color: blue;
+            bottom: 0; /* Position player at the bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+        }
+        #kimchi {
+            background-color: red;
+            border-radius: 50%;
+        }
+        #score-board {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <button id="help-button">도움말</button>
+    <button id="switch-button">게임 시작/게임 전환(C키)</button>
+
+    <div id="game-container">
+        <h2>김치와 깍두기 게임</h2>
+        <p>3자리 숫자를 맞혀 보세요!</p>
+        <input type="text" id="guess-input" maxlength="3" placeholder="3자리 숫자 입력">
+        <button id="guess-button">추측 제출</button>
+        <div id="result"></div>
+        <div id="history"></div>
+    </div>
+
+    <div id="kimchi-game">
+        <div id="player"></div>
+        <div id="kimchi"></div>
+    </div>
+
+    <div id="score-board">
+        <h3>점수 기록</h3>
+        <div id="scores"></div>
+    </div>
+
+    <div id="help-modal">
+        <div id="modal-content">
+            <button id="close-button">닫기</button>
+            <h3>게임 설명</h3>
+            <p>
+                <strong>김치와 깍두기 게임</strong>은 3자리 숫자를 맞추는 게임입니다.<br>
+                - <strong>김치</strong>: 숫자와 위치가 모두 맞습니다.<br>
+                - <strong>깍두기</strong>: 숫자는 맞지만 위치가 다릅니다.<br>
+                플레이어는 3자리 숫자를 입력하고, 제출 버튼을 클릭하여 추측을 제출합니다.<br>
+                결과는 "김치"와 "깍두기"의 개수로 표시됩니다. 3자리 숫자를 정확히 맞추면 게임이 종료됩니다.<br><br>
+                <strong>김치 피하기 게임</strong>은 내려오는 김치를 좌우로 움직여 피하는 게임입니다.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Function to generate a random 3-digit number
+        // Function to generate a random 3-digit number
+function generateSecretNumber() {
+    let digits = [];
+    while (digits.length < 3) {
+        const digit = Math.floor(Math.random() * 10).toString();
+        if (!digits.includes(digit)) {
+            digits.push(digit);
+        }
+    }
+    return digits.join('');
+}
+
+// Function to check the guess against the secret number
+function checkGuess(guess, secret) {
+    let kimchi = 0, kackdugi = 0;
+    for (let i = 0; i < guess.length; i++) {
+        if (guess[i] === secret[i]) {
+            kimchi++;
+        } else if (secret.includes(guess[i])) {
+            kackdugi++;
+        }
+    }
+    return { kimchi, kackdugi };
+}
+
+// Function to add an entry to the history
+function addHistoryEntry(guess, kimchi, kackdugi) {
+    const entry = document.createElement('div');
+    entry.classList.add('history-entry');
+    entry.textContent = `추측: ${guess} - 김치: ${kimchi}, 깍두기: ${kackdugi}`;
+    historyElement.appendChild(entry);
+    historyElement.scrollTop = historyElement.scrollHeight; // Scroll to bottom
+}
+
+// Function to add a score entry to the scoreboard and sort it
+function addScoreEntry(name, duration) {
+    const scoreEntry = { name, duration };
+    scoreEntries.push(scoreEntry);
+    scoreEntries.sort((a, b) => b.duration - a.duration); // Sort by duration, descending
+
+    // Update the score board display
+    scoresElement.innerHTML = '';
+    scoreEntries.forEach(entry => {
+        const entryDiv = document.createElement('div');
+        entryDiv.textContent = `${entry.name} - ${entry.duration}초`;
+        scoresElement.appendChild(entryDiv);
+    });
+}
+
+// Function to toggle the visibility of the help modal
+function toggleHelpModal(show) {
+    helpModal.style.display = show ? 'flex' : 'none';
+}
+
+// Function to switch game mode
+function switchGameMode() {
+    if (currentMode === 'guess') {
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('kimchi-game').style.display = 'block';
+        startKimchiGame();
+        currentMode = 'kimchi';
+    } else {
+        document.getElementById('kimchi-game').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        currentMode = 'guess';
+    }
+}
+
+// Variables for the game
+const guessInput = document.getElementById('guess-input');
+const guessButton = document.getElementById('guess-button');
+const resultElement = document.getElementById('result');
+const historyElement = document.getElementById('history');
+const helpButton = document.getElementById('help-button');
+const closeButton = document.getElementById('close-button');
+const helpModal = document.getElementById('help-modal');
+const switchButton = document.getElementById('switch-button');
+const kimchi = document.getElementById('kimchi');
+const player = document.getElementById('player');
+const scoresElement = document.getElementById('scores');
+let currentMode = 'guess'; // 'guess' or 'kimchi'
+let secretNumber = generateSecretNumber();
+let scoreEntries = [];
+let gameActive = false; // Track if the game is active
+
+// Add event listener for the guess button
+guessButton.addEventListener('click', () => {
+    const guess = guessInput.value;
+    if (guess.length !== 3 || isNaN(guess)) {
+        alert('유효한 3자리 숫자를 입력하세요.');
+        return;
+    }
+
+    const { kimchi: k, kackdugi: kd } = checkGuess(guess, secretNumber);
+    addHistoryEntry(guess, k, kd);
+
+    if (k === 3) {
+        resultElement.textContent = `축하합니다! 숫자를 맞추셨습니다: ${secretNumber}`;
+        guessButton.disabled = true;
+        guessInput.disabled = true;
+    } else {
+        resultElement.textContent = `김치: ${k}, 깍두기: ${kd}`;
+        guessInput.value = '';
+        guessInput.focus();
+    }
+});
+
+// Add event listener for the help button
+helpButton.addEventListener('click', () => {
+    toggleHelpModal(true);
+});
+
+// Add event listener for the close button in the help modal
+closeButton.addEventListener('click', () => {
+    toggleHelpModal(false);
+});
+
+// Add event listener for the switch button
+switchButton.addEventListener('click', switchGameMode);
+
+// Handle key presses to switch games
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'c') {
+        switchGameMode();
+    }
+});
+
+// Variables for the kimchi game
+let kimchiX = Math.random() * (window.innerWidth - 50);
+let kimchiY = 0;
+let score = 0;
+let gameInterval;
+let playerX = window.innerWidth / 2 - 25;
+let speed = 2; // Initial speed of kimchi falling
+let gameStartTime;
+
+// Function to start the kimchi game
+function startKimchiGame() {
+    if (gameActive) return; // Prevent starting a new game if one is already active
+    gameActive = true;
+    kimchiX = Math.random() * (window.innerWidth - 50);
+    kimchiY = 0;
+    score = 0;
+    speed = 2;
+    playerX = window.innerWidth / 2 - 25;
+    player.style.left = `${playerX}px`;
+    gameStartTime = Date.now();
+    gameInterval = setInterval(updateKimchiGame, 20);
+}
+
+// Function to update the kimchi game
+function updateKimchiGame() {
+    kimchiY += speed; // Speed of kimchi falling increases over time
+    if (kimchiY > window.innerHeight) {
+        kimchiY = 0;
+        kimchiX = Math.random() * (window.innerWidth - 50);
+        speed += 0.1; // Increase speed
+    }
+    kimchi.style.top = `${kimchiY}px`;
+    kimchi.style.left = `${kimchiX}px`;
+
+    // Check for collision with player
+    if (kimchiY + 50 > window.innerHeight - 50 && kimchiX + 50 > playerX && kimchiX < playerX + 50) {
+        clearInterval(gameInterval);
+        gameActive = false; // Mark game as inactive
+        let gameOverTime = Date.now();
+        let duration = Math.floor((gameOverTime - gameStartTime) / 1000); // Seconds
+        let playerName = prompt(`게임 오버! 당신의 점수는 ${duration}초입니다. 이름을 입력하세요:`);
+        if (playerName) {
+            addScoreEntry(playerName, duration);
+        }
+        // Switch back to guess mode
+        document.getElementById('kimchi-game').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        currentMode = 'guess';
+    }
+
+    // Update player position
+    player.style.left = `${playerX}px`;
+}
+
+// Handle key presses for player movement
+document.addEventListener('keydown', (event) => {
+    if (currentMode === 'kimchi') {
+        if (event.key === 'ArrowLeft') {
+            playerX -= 10;
+            if (playerX < 0) playerX = 0;
+        } else if (event.key === 'ArrowRight') {
+            playerX += 10;
+            if (playerX > window.innerWidth - 50) playerX = window.innerWidth - 50;
+        }
+        player.style.left = `${playerX}px`;
+    }
+});
+
+    </script>
+</body>
+</html>
